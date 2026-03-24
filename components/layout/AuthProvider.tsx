@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -24,9 +25,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const allowedEmails = (process.env.NEXT_PUBLIC_ALLOWED_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  const isEmailAllowed = (email: string | null | undefined) => {
+    if (!email) return false;
+    if (allowedEmails.length === 0) return true;
+    return allowedEmails.includes(email.toLowerCase());
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && !isEmailAllowed(firebaseUser.email)) {
+        void signOut(auth);
+        setUser(null);
+        setLoading(false);
+        toast.error("This account is not authorized to access this app.");
+        if (pathname !== "/login") {
+          router.push("/login");
+        }
+        return;
+      }
+
       setUser(firebaseUser);
       setLoading(false);
       if (!firebaseUser && pathname !== "/login") {
@@ -40,7 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (!isEmailAllowed(result.user.email)) {
+        await signOut(auth);
+        throw new Error("This account is not authorized to access this app.");
+      }
       router.push("/dashboard");
     } catch (error) {
       console.error("Sign in error:", error);
