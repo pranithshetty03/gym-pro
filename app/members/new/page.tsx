@@ -84,7 +84,7 @@ export default function NewMemberPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="font-display text-4xl tracking-widest">ADD MEMBER</h1>
+            <h1 className="font-display text-3xl sm:text-4xl tracking-widest">ADD MEMBER</h1>
             <p className="text-muted-foreground text-sm">Register a new gym member</p>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function NewMemberPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">Start Date *</label>
                 <input
@@ -193,7 +193,7 @@ export default function NewMemberPage() {
             <h2 className="font-display text-lg tracking-widest flex items-center gap-2 text-muted-foreground">
               <CreditCard className="w-4 h-4" /> PAYMENT
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">Amount (₹) *</label>
                 <input

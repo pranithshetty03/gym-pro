@@ -167,7 +167,7 @@ function MessagesPageContent() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-display text-4xl tracking-widest">PAYMENT QR</h1>
+          <h1 className="font-display text-3xl sm:text-4xl tracking-widest">PAYMENT QR</h1>
           <p className="text-muted-foreground text-sm mt-1">Generate UPI payment QR codes for memberships</p>
         </div>
 
@@ -219,7 +219,7 @@ function MessagesPageContent() {
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">Your UPI ID *</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     value={upiId}
                     onChange={(e) => { setUpiId(e.target.value); setQrDataUrl(null); }}
@@ -229,14 +229,14 @@ function MessagesPageContent() {
                   <button
                     onClick={handleCopyUPI}
                     disabled={!upiId}
-                    className="p-2.5 rounded-lg bg-muted border border-border hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40"
+                    className="p-2.5 rounded-lg bg-muted border border-border hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 sm:w-auto"
                   >
                     {copied ? <CheckCheck className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">Amount (₹) *</label>
                   <input
@@ -316,7 +316,7 @@ function MessagesPageContent() {
                       <span className="font-bold text-gray-900 text-sm font-mono">GymPro Pay</span>
                     </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrDataUrl} alt="UPI QR Code" className="w-64 h-64 rounded-xl" />
+                    <img src={qrDataUrl} alt="UPI QR Code" className="w-56 h-56 sm:w-64 sm:h-64 rounded-xl" />
                     <div className="text-center">
                       <p className="text-2xl font-bold text-gray-900">₹{amount.toLocaleString()}</p>
                       <p className="text-gray-500 text-xs mt-0.5">{note || "Gym Membership"}</p>
@@ -331,7 +331,7 @@ function MessagesPageContent() {
                   </div>
 
                   {/* Actions */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       onClick={handleDownload}
                       className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-muted border border-border text-sm text-foreground hover:bg-muted/80 transition-colors"
@@ -384,7 +384,7 @@ function MessagesPageContent() {
           ) : (
             <div className="divide-y divide-border">
               {payments.map((payment) => (
-                <div key={payment.id} className="flex items-center gap-4 px-5 py-4">
+                <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4">
                   <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0">
                     <IndianRupee className="w-5 h-5 text-violet-400" />
                   </div>
@@ -404,7 +404,7 @@ function MessagesPageContent() {
                     <a
                       href={payment.qr_code_url}
                       download={`qr-${payment.id}.png`}
-                      className="p-2 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary transition-colors ml-2"
+                      className="p-2 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary transition-colors sm:ml-2 self-start sm:self-auto"
                       title="Download QR"
                     >
                       <Download className="w-4 h-4" />

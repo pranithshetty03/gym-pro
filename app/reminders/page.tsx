@@ -136,18 +136,18 @@ export default function RemindersPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-4xl tracking-widest">REMINDERS</h1>
+            <h1 className="font-display text-3xl sm:text-4xl tracking-widest">REMINDERS</h1>
             <p className="text-muted-foreground text-sm mt-1">
               {urgentMembers.length} member{urgentMembers.length !== 1 ? "s" : ""} need attention
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {urgentMembers.length > 0 && (
               <button
                 onClick={handleAutoRemindAll}
-                className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-500/30 transition-colors"
+                className="flex items-center justify-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-500/30 transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Remind All ({urgentMembers.length})
@@ -155,7 +155,7 @@ export default function RemindersPage() {
             )}
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Custom Reminder
@@ -187,7 +187,7 @@ export default function RemindersPage() {
                 const status = getMemberStatus(member.membership_end);
                 const days = getDaysLeft(member.membership_end);
                 return (
-                  <div key={member.id} className="flex items-center gap-4 px-5 py-4">
+                  <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${
                       status === "expired" ? "bg-red-400/20 text-red-400" : "bg-amber-400/20 text-amber-400"
                     }`}>
@@ -202,7 +202,7 @@ export default function RemindersPage() {
                         <span className="text-xs text-muted-foreground">{member.phone}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => handleSendSMS(member)}
                         className="p-2 rounded-lg bg-muted hover:bg-sky-500/20 hover:text-sky-400 transition-colors"
@@ -213,7 +213,7 @@ export default function RemindersPage() {
                       <button
                         onClick={() => handleSendWhatsApp(member)}
                         disabled={sending === member.id}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-xs font-medium disabled:opacity-50"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-xs font-medium disabled:opacity-50"
                       >
                         {sending === member.id ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />

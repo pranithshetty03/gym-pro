@@ -115,12 +115,12 @@ export default function MemberDetailPage() {
           <Link href="/members" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="font-display text-4xl tracking-widest">MEMBER</h1>
+          <h1 className="font-display text-3xl sm:text-4xl tracking-widest">MEMBER</h1>
         </div>
 
         {/* Profile Card */}
         <div className="bg-card border border-border rounded-xl p-6">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
             <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center font-display text-3xl text-primary">
               {member.name[0]}
             </div>
@@ -135,7 +135,7 @@ export default function MemberDetailPage() {
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 self-start sm:self-auto">
               <Link
                 href={`/messages?member=${member.id}`}
                 className="p-2 rounded-lg bg-muted hover:bg-primary/20 hover:text-primary transition-colors"
@@ -206,7 +206,7 @@ export default function MemberDetailPage() {
         {/* Membership Details */}
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <h3 className="font-display text-sm tracking-widest text-muted-foreground">MEMBERSHIP DETAILS</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: "Plan", value: member.membership_plan, icon: Calendar },
               { label: "Start Date", value: formatDate(member.membership_start), icon: Calendar },
@@ -232,7 +232,7 @@ export default function MemberDetailPage() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleRenew}
             disabled={renewing}

@@ -64,9 +64,9 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-4xl text-foreground tracking-widest">
+            <h1 className="font-display text-3xl sm:text-4xl text-foreground tracking-widest">
               DASHBOARD
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -75,7 +75,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/members/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors glow-orange"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors glow-orange"
           >
             <Dumbbell className="w-4 h-4" />
             Add Member
@@ -84,13 +84,13 @@ export default function DashboardPage() {
 
         {/* Stats */}
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-32 bg-card border border-border rounded-xl animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Members"
               value={members.length}
@@ -249,9 +249,9 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.phone} · {member.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.phone} · {member.email}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${planColor(member.membership_plan)}`}>
                         {member.membership_plan}
                       </span>

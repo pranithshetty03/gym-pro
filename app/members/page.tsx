@@ -49,14 +49,14 @@ function MembersPageContent() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-4xl tracking-widest">MEMBERS</h1>
+            <h1 className="font-display text-3xl sm:text-4xl tracking-widest">MEMBERS</h1>
             <p className="text-muted-foreground text-sm mt-1">{members.length} total members</p>
           </div>
           <Link
             href="/members/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Member
@@ -74,11 +74,11 @@ function MembersPageContent() {
               className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:w-auto w-full">
             <select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
-              className="bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
             >
               <option value="all">All Plans</option>
               <option value="monthly">Monthly</option>
@@ -89,7 +89,7 @@ function MembersPageContent() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
