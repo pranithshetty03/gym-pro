@@ -9,8 +9,7 @@ A full-stack gym management app for personal trainers. Built with **Next.js 14**
 - 🔐 **Firebase Google Auth** — Secure trainer login
 - 👥 **Member Management** — Add, view, edit, delete members
 - 📅 **Membership Tracking** — Auto status (active / expiring soon / expired)
-- 🔔 **Reminders** — WhatsApp + SMS alerts for expiring memberships
-- 📱 **Payment QR Generator** — UPI QR codes for direct payment collection
+- 🔔 **Reminders** — SMS + Email alerts for expiring memberships
 - 💾 **Supabase Backend** — Real-time PostgreSQL with Row Level Security
 - 🚀 **Vercel Deployment** — One-click public deployment
 
@@ -24,7 +23,6 @@ A full-stack gym management app for personal trainers. Built with **Next.js 14**
 | UI Components | ShadCN UI + Tailwind CSS |
 | Authentication | Firebase Auth (Google) |
 | Database | Supabase (PostgreSQL) |
-| QR Generation | `qrcode` npm package |
 | Deployment | Vercel |
 
 ---
@@ -111,8 +109,8 @@ gym-trainer-dashboard/
 │   │   ├── page.tsx        # Members list
 │   │   ├── new/page.tsx    # Add member form
 │   │   └── [id]/page.tsx   # Member detail
-│   ├── reminders/page.tsx  # Expiry alerts + WhatsApp
-│   └── messages/page.tsx   # UPI QR generator
+│   ├── reminders/page.tsx  # Expiry alerts via SMS/Email
+│   └── messages/page.tsx   # Redirects to reminders
 ├── components/
 │   └── layout/
 │       ├── AuthProvider.tsx
@@ -139,19 +137,9 @@ gym-trainer-dashboard/
 | `/members` | Full member list with filters |
 | `/members/new` | Add new member |
 | `/members/[id]` | Member detail + renew |
-| `/reminders` | Expiry alerts + WhatsApp/SMS |
-| `/messages` | UPI QR code generator + history |
+| `/reminders` | Expiry alerts via SMS/Email |
+| `/messages` | Redirects to `/reminders` |
 
 ---
 
-## 💡 UPI QR Code Setup
-
-In the **Payment QR** page, enter your UPI ID (e.g., `9876543210@ybl` or `yourname@paytm`).
-
-The app generates a standard UPI deep link QR:
-```
-upi://pay?pa=YOUR_UPI&pn=GymPro&am=AMOUNT&cu=INR&tn=NOTE
-```
-
-Members can scan this with any UPI app (GPay, PhonePe, Paytm, etc.).
 # gym-pro

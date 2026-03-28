@@ -1,5 +1,9 @@
-export type MembershipPlan = "monthly" | "quarterly" | "half-yearly" | "annual";
-export type MemberStatus = "active" | "expired" | "expiring_soon" | "paused";
+export type MembershipPlan = "student" | "general";
+
+/** Package length for renewals (after first admission month). */
+export type BillingPeriod = "monthly" | "three_months" | "six_months" | "yearly";
+
+export type MemberStatus = "active" | "expired" | "expiring_soon" | "paused" | "inactive";
 export type PaymentMethod = "cash" | "upi" | "card" | "bank_transfer";
 
 export interface Member {
@@ -10,14 +14,21 @@ export interface Member {
   phone: string;
   photo_url?: string;
   membership_plan: MembershipPlan;
+  billing_period: BillingPeriod;
   membership_start: string;
   membership_end: string;
   status: MemberStatus;
   payment_method: PaymentMethod;
+  /** Cumulative renewals after admission (not including admission_paid). */
   amount_paid: number;
+  /** One-time admission fee (typically ₹1000). */
+  admission_paid: number;
   notes?: string;
   emergency_contact?: string;
   trainer_id: string;
+  is_first_membership: boolean;
+  is_inactive: boolean;
+  import_key: number | null;
 }
 
 export interface Reminder {
@@ -50,22 +61,22 @@ export interface Database {
   public: {
     Tables: {
       members: {
-        Row: Member;
-        Insert: Omit<Member, "id" | "created_at">;
-        Update: Partial<Omit<Member, "id" | "created_at">>;
-        Relationships: [];
+        Row: Member & Record<string, unknown>;
+        Insert: Omit<Member, "id" | "created_at"> & Record<string, unknown>;
+        Update: Partial<Omit<Member, "id" | "created_at">> & Record<string, unknown>;
+        Relationships: never[];
       };
       reminders: {
-        Row: Reminder;
-        Insert: Omit<Reminder, "id" | "created_at">;
-        Update: Partial<Omit<Reminder, "id" | "created_at">>;
-        Relationships: [];
+        Row: Reminder & Record<string, unknown>;
+        Insert: Omit<Reminder, "id" | "created_at"> & Record<string, unknown>;
+        Update: Partial<Omit<Reminder, "id" | "created_at">> & Record<string, unknown>;
+        Relationships: never[];
       };
       payments: {
-        Row: Payment;
-        Insert: Omit<Payment, "id" | "created_at">;
-        Update: Partial<Omit<Payment, "id" | "created_at">>;
-        Relationships: [];
+        Row: Payment & Record<string, unknown>;
+        Insert: Omit<Payment, "id" | "created_at"> & Record<string, unknown>;
+        Update: Partial<Omit<Payment, "id" | "created_at">> & Record<string, unknown>;
+        Relationships: never[];
       };
     };
     Views: {

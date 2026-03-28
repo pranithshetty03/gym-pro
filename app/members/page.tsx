@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/components/layout/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { getMemberStatus, formatDate, statusColor, planColor } from "@/lib/utils";
+import { getMemberDisplayStatus, formatDate, statusColor, planColor, normalizeMember } from "@/lib/utils";
 import { Member } from "@/types/supabase";
 import { Search, Plus, Filter, ChevronRight, Phone, Mail } from "lucide-react";
 import Link from "next/link";
@@ -28,14 +28,14 @@ function MembersPageContent() {
       .select("*")
       .eq("trainer_id", user.uid)
       .order("name");
-    if (data) setMembers(data as Member[]);
+    if (data) setMembers(data.map((row) => normalizeMember(row as Record<string, unknown>)));
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   const filtered = members.filter((m) => {
-    const status = getMemberStatus(m.membership_end);
+    const status = getMemberDisplayStatus(m);
     const matchesSearch =
       search === "" ||
       m.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -54,13 +54,21 @@ function MembersPageContent() {
             <h1 className="font-display text-3xl sm:text-4xl tracking-widest">MEMBERS</h1>
             <p className="text-muted-foreground text-sm mt-1">{members.length} total members</p>
           </div>
-          <Link
-            href="/members/new"
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Member
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Link
+              href="/members/import"
+              className="inline-flex items-center justify-center gap-2 border border-border bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors"
+            >
+              Import
+            </Link>
+            <Link
+              href="/members/new"
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Member
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}
@@ -81,10 +89,8 @@ function MembersPageContent() {
               className="bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-auto"
             >
               <option value="all">All Plans</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="half-yearly">Half-Yearly</option>
-              <option value="annual">Annual</option>
+              <option value="student">Student</option>
+              <option value="general">General</option>
             </select>
             <select
               value={statusFilter}
@@ -95,6 +101,7 @@ function MembersPageContent() {
               <option value="active">Active</option>
               <option value="expiring_soon">Expiring Soon</option>
               <option value="expired">Expired</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -114,7 +121,7 @@ function MembersPageContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((member) => {
-              const status = getMemberStatus(member.membership_end);
+              const status = getMemberDisplayStatus(member);
               return (
                 <Link
                   key={member.id}

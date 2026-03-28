@@ -4,11 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/components/layout/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { getMemberStatus, formatDate, getDaysLeft, statusColor } from "@/lib/utils";
+import { getMemberStatus, formatDate, getDaysLeft, statusColor, normalizeMember } from "@/lib/utils";
 import { Member, Reminder } from "@/types/supabase";
 import {
   Bell, CheckCircle2, Clock, Send, AlertTriangle,
-  RefreshCw, Plus, X, Phone, MessageSquare,
+  RefreshCw, Plus, X, MessageSquare, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -33,6 +33,7 @@ export default function RemindersPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [customMessage, setCustomMessage] = useState("");
+  const [customChannel, setCustomChannel] = useState<"sms" | "email">("sms");
   const [sending, setSending] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -46,7 +47,9 @@ export default function RemindersPage() {
         .order("scheduled_for", { ascending: false })
         .limit(30),
     ]);
-    if (membersRes.data) setMembers(membersRes.data as Member[]);
+    if (membersRes.data) {
+      setMembers(membersRes.data.map((row) => normalizeMember(row as Record<string, unknown>)));
+    }
     if (remindersRes.data) setReminders(remindersRes.data as Reminder[]);
     setLoading(false);
   }, [user]);
@@ -54,12 +57,15 @@ export default function RemindersPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // Members expiring soon (≤7 days) or expired
-  const urgentMembers = members.filter((m) => {
-    const s = getMemberStatus(m.membership_end);
-    return s === "expiring_soon" || s === "expired";
-  }).sort((a, b) => getDaysLeft(a.membership_end) - getDaysLeft(b.membership_end));
+  const urgentMembers = members
+    .filter((m) => {
+      if (m.is_inactive) return false;
+      const s = getMemberStatus(m.membership_end);
+      return s === "expiring_soon" || s === "expired";
+    })
+    .sort((a, b) => getDaysLeft(a.membership_end) - getDaysLeft(b.membership_end));
 
-  const generateWhatsAppMessage = (member: Member) => {
+  const generateReminderMessage = (member: Member) => {
     const days = getDaysLeft(member.membership_end);
     const expired = days < 0;
     return expired
@@ -67,41 +73,77 @@ export default function RemindersPage() {
       : `Hi ${member.name}! 👋 Your GymPro membership expires in *${days} day${days !== 1 ? "s" : ""}* on ${formatDate(member.membership_end)}. Renew now to keep your streak going! 💪`;
   };
 
-  const handleSendWhatsApp = async (member: Member) => {
-    setSending(member.id);
-    const message = generateWhatsAppMessage(member);
+  const handleSendSMS = async (member: Member) => {
+    if (!user) return;
+    setSending(member.id + "-sms");
+    const message = generateReminderMessage(member);
     const phone = member.phone.replace(/\D/g, "");
-    const url = `https://wa.me/${phone.startsWith("91") ? phone : "91" + phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
 
-    // Log reminder in Supabase
-    await supabase.from("reminders").insert({
+    const { error } = await supabase.from("reminders").insert({
       member_id: member.id,
       type: "expiry",
       message,
       scheduled_for: new Date().toISOString(),
       sent: true,
       sent_at: new Date().toISOString(),
-      trainer_id: user!.uid,
+      trainer_id: user.uid,
     });
 
-    toast.success(`WhatsApp opened for ${member.name}`);
+    if (error) {
+      toast.error("Failed to save reminder: " + error.message);
+      setSending(null);
+      return;
+    }
+
     await fetchData();
+    window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+    toast.success("SMS app opened");
     setSending(null);
   };
 
-  const handleSendSMS = (member: Member) => {
-    const message = generateWhatsAppMessage(member);
-    const phone = member.phone.replace(/\D/g, "");
-    window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
-    toast.success("SMS app opened");
+  const handleSendEmail = async (member: Member) => {
+    if (!user) return;
+    if (!member.email) {
+      toast.error("Member email not available");
+      return;
+    }
+
+    setSending(member.id + "-email");
+    const message = generateReminderMessage(member);
+    const subject = "Gym Membership Renewal Reminder";
+
+    const { error } = await supabase.from("reminders").insert({
+      member_id: member.id,
+      type: "expiry",
+      message,
+      scheduled_for: new Date().toISOString(),
+      sent: true,
+      sent_at: new Date().toISOString(),
+      trainer_id: user.uid,
+    });
+
+    if (error) {
+      toast.error("Failed to save reminder: " + error.message);
+      setSending(null);
+      return;
+    }
+
+    await fetchData();
+    window.location.href = `mailto:${member.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    toast.success("Email app opened");
+    setSending(null);
   };
 
   const handleCustomReminder = async () => {
     if (!selectedMember || !customMessage.trim() || !user) return;
+    if (customChannel === "email" && !selectedMember.email?.trim()) {
+      toast.error("Selected member does not have an email");
+      return;
+    }
+
     setSending("custom");
 
-    await supabase.from("reminders").insert({
+    const { error } = await supabase.from("reminders").insert({
       member_id: selectedMember.id,
       type: "custom",
       message: customMessage,
@@ -111,25 +153,31 @@ export default function RemindersPage() {
       trainer_id: user.uid,
     });
 
-    const phone = selectedMember.phone.replace(/\D/g, "");
-    const url = `https://wa.me/${phone.startsWith("91") ? phone : "91" + phone}?text=${encodeURIComponent(customMessage)}`;
-    window.open(url, "_blank");
+    if (error) {
+      toast.error("Failed to save reminder: " + error.message);
+      setSending(null);
+      return;
+    }
 
-    toast.success("Custom reminder sent!");
+    const phoneDigits = selectedMember.phone.replace(/\D/g, "");
+    const memberEmail = selectedMember.email?.trim() ?? "";
+    const messageBody = customMessage;
+    const channel = customChannel;
+
+    await fetchData();
     setShowModal(false);
     setCustomMessage("");
     setSelectedMember(null);
-    await fetchData();
-    setSending(null);
-  };
 
-  const handleAutoRemindAll = async () => {
-    if (!urgentMembers.length) return;
-    toast.info(`Opening WhatsApp for ${urgentMembers.length} members...`);
-    for (const member of urgentMembers.slice(0, 3)) {
-      await handleSendWhatsApp(member);
-      await new Promise((r) => setTimeout(r, 800));
+    if (channel === "sms") {
+      window.location.href = `sms:${phoneDigits}?body=${encodeURIComponent(messageBody)}`;
+      toast.success("SMS app opened");
+    } else {
+      window.location.href = `mailto:${memberEmail}?subject=${encodeURIComponent("Gym Membership Reminder")}&body=${encodeURIComponent(messageBody)}`;
+      toast.success("Email app opened");
     }
+
+    setSending(null);
   };
 
   return (
@@ -144,15 +192,6 @@ export default function RemindersPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {urgentMembers.length > 0 && (
-              <button
-                onClick={handleAutoRemindAll}
-                className="flex items-center justify-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-500/30 transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                Remind All ({urgentMembers.length})
-              </button>
-            )}
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -205,24 +244,19 @@ export default function RemindersPage() {
                     <div className="flex gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => handleSendSMS(member)}
-                        className="p-2 rounded-lg bg-muted hover:bg-sky-500/20 hover:text-sky-400 transition-colors"
+                        disabled={sending === member.id + "-sms"}
+                        className="p-2 rounded-lg bg-muted hover:bg-sky-500/20 hover:text-sky-400 transition-colors disabled:opacity-50"
                         title="Send SMS"
                       >
                         <MessageSquare className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleSendWhatsApp(member)}
-                        disabled={sending === member.id}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-xs font-medium disabled:opacity-50"
+                        onClick={() => handleSendEmail(member)}
+                        disabled={sending === member.id + "-email"}
+                        className="p-2 rounded-lg bg-muted hover:bg-indigo-500/20 hover:text-indigo-400 transition-colors disabled:opacity-50"
+                        title="Send Email"
                       >
-                        {sending === member.id ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                          </svg>
-                        )}
-                        WhatsApp
+                        <Mail className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -297,7 +331,7 @@ export default function RemindersPage() {
                   onChange={(e) => {
                     const m = members.find((m) => m.id === e.target.value);
                     setSelectedMember(m ?? null);
-                    if (m) setCustomMessage(generateWhatsAppMessage(m));
+                    if (m) setCustomMessage(generateReminderMessage(m));
                   }}
                   className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
@@ -320,6 +354,34 @@ export default function RemindersPage() {
                 <p className="text-[10px] text-muted-foreground mt-1">{customMessage.length} characters</p>
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Channel *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomChannel("sms")}
+                    className={`py-2 rounded-lg border text-sm transition-colors ${
+                      customChannel === "sms"
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "border-border bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    SMS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomChannel("email")}
+                    className={`py-2 rounded-lg border text-sm transition-colors ${
+                      customChannel === "email"
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "border-border bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    Email
+                  </button>
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowModal(false)}
@@ -337,7 +399,7 @@ export default function RemindersPage() {
                   ) : (
                     <Send className="w-4 h-4" />
                   )}
-                  Send via WhatsApp
+                  {customChannel === "sms" ? "Send via SMS" : "Send via Email"}
                 </button>
               </div>
             </div>

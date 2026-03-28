@@ -5,7 +5,7 @@ import { AuthProvider } from "@/components/layout/AuthProvider";
 
 export const metadata: Metadata = {
   title: "GymPro — Trainer Dashboard",
-  description: "Manage memberships, track members, send reminders and payments",
+  description: "Manage memberships, track members, and send renewal reminders",
   icons: { icon: "/favicon.ico" },
 };
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/components/layout/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { getMemberStatus, formatDate, statusColor, planColor } from "@/lib/utils";
+import { getMemberStatus, getMemberDisplayStatus, formatDate, statusColor, planColor, normalizeMember } from "@/lib/utils";
 import { Member } from "@/types/supabase";
 import {
   Users, TrendingUp, AlertTriangle, CheckCircle2,
@@ -47,16 +47,25 @@ export default function DashboardPage() {
         .select("*")
         .eq("trainer_id", user.uid)
         .order("created_at", { ascending: false });
-      if (data) setMembers(data as Member[]);
+      if (data) setMembers(data.map((row) => normalizeMember(row as Record<string, unknown>)));
       setLoading(false);
     };
     fetchMembers();
   }, [user]);
 
-  const activeMembers = members.filter((m) => getMemberStatus(m.membership_end) === "active");
-  const expiringSoon = members.filter((m) => getMemberStatus(m.membership_end) === "expiring_soon");
-  const expired = members.filter((m) => getMemberStatus(m.membership_end) === "expired");
-  const totalRevenue = members.reduce((sum, m) => sum + m.amount_paid, 0);
+  const activeMembers = members.filter(
+    (m) => !m.is_inactive && getMemberStatus(m.membership_end) === "active"
+  );
+  const expiringSoon = members.filter(
+    (m) => !m.is_inactive && getMemberStatus(m.membership_end) === "expiring_soon"
+  );
+  const expired = members.filter(
+    (m) => !m.is_inactive && getMemberStatus(m.membership_end) === "expired"
+  );
+  const totalRevenue = members.reduce(
+    (sum, m) => sum + (m.admission_paid ?? 0) + (m.amount_paid ?? 0),
+    0
+  );
 
   const recentActivity = members.slice(0, 5);
 
@@ -173,13 +182,14 @@ export default function DashboardPage() {
               PLAN BREAKDOWN
             </h2>
             <div className="space-y-3">
-              {(["monthly", "quarterly", "half-yearly", "annual"] as const).map((plan) => {
+              {(["student", "general"] as const).map((plan) => {
                 const count = members.filter((m) => m.membership_plan === plan).length;
                 const pct = members.length ? Math.round((count / members.length) * 100) : 0;
+                const barColor = plan === "general" ? "#a855f7" : "#38bdf8";
                 return (
                   <div key={plan}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className={`capitalize font-medium ${planColor(plan).split(" ")[0]}`}>{plan.replace("-", " ")}</span>
+                      <span className={`capitalize font-medium ${planColor(plan).split(" ")[0]}`}>{plan}</span>
                       <span className="text-muted-foreground">{count} ({pct}%)</span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -187,7 +197,7 @@ export default function DashboardPage() {
                         className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${pct}%`,
-                          background: plan === "annual" ? "#f59e0b" : plan === "half-yearly" ? "#ec4899" : plan === "quarterly" ? "#a855f7" : "#38bdf8",
+                          background: barColor,
                         }}
                       />
                     </div>
@@ -237,7 +247,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               recentActivity.map((member) => {
-                const status = getMemberStatus(member.membership_end);
+                const status = getMemberDisplayStatus(member);
                 return (
                   <Link
                     key={member.id}

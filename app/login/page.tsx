@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/layout/AuthProvider";
-import { Dumbbell, Chrome, Flame, Zap } from "lucide-react";
+import { Dumbbell, Flame, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -58,7 +58,6 @@ export default function LoginPage() {
           {[
             { icon: Flame, text: "Member Tracking" },
             { icon: Zap, text: "Auto Reminders" },
-            { icon: Chrome, text: "Payment QR" },
           ].map(({ icon: Icon, text }) => (
             <span
               key={text}

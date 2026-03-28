@@ -4,15 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import {
-  LayoutDashboard, Users, Bell, QrCode, LogOut, Dumbbell, ChevronRight, X,
+  LayoutDashboard, Users, Bell, LogOut, Dumbbell, ChevronRight, X, FileUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/members", label: "Members", icon: Users },
+  { href: "/members/import", label: "Import", icon: FileUp },
   { href: "/reminders", label: "Reminders", icon: Bell },
-  { href: "/messages", label: "Payment QR", icon: QrCode },
 ];
 
 type SidebarProps = {

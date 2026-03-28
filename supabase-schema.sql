@@ -12,15 +12,24 @@ create table if not exists public.members (
   email text default '',
   phone text not null,
   photo_url text,
-  membership_plan text not null check (membership_plan in ('monthly', 'quarterly', 'half-yearly', 'annual')),
+  membership_plan text not null check (membership_plan in ('student', 'general')),
+  billing_period text not null default 'monthly' check (billing_period in ('monthly', 'three_months', 'six_months', 'yearly')),
   membership_start date not null,
   membership_end date not null,
-  status text default 'active' check (status in ('active', 'expired', 'expiring_soon', 'paused')),
+  status text default 'active' check (status in ('active', 'expired', 'expiring_soon', 'paused', 'inactive')),
   payment_method text default 'upi' check (payment_method in ('cash', 'upi', 'card', 'bank_transfer')),
   amount_paid numeric default 0,
+  admission_paid numeric default 0,
   notes text,
-  emergency_contact text
+  emergency_contact text,
+  is_first_membership boolean default true,
+  is_inactive boolean default false,
+  import_key integer
 );
+
+create unique index if not exists idx_members_trainer_import_key
+  on public.members (trainer_id, import_key)
+  where import_key is not null;
 
 -- 2. REMINDERS TABLE
 create table if not exists public.reminders (
@@ -104,11 +113,3 @@ create index if not exists idx_members_trainer_id on public.members(trainer_id);
 create index if not exists idx_members_membership_end on public.members(membership_end);
 create index if not exists idx_reminders_trainer_id on public.reminders(trainer_id);
 create index if not exists idx_payments_trainer_id on public.payments(trainer_id);
-
--- ============================================================
--- Sample data (optional — remove before production)
--- ============================================================
--- INSERT INTO public.members (trainer_id, name, email, phone, membership_plan, membership_start, membership_end, amount_paid)
--- VALUES
---   ('your_firebase_uid', 'Ravi Kumar', 'ravi@email.com', '9876543210', 'monthly', NOW(), NOW() + INTERVAL '30 days', 1500),
---   ('your_firebase_uid', 'Priya Sharma', 'priya@email.com', '9123456789', 'quarterly', NOW(), NOW() + INTERVAL '5 days', 4000);
